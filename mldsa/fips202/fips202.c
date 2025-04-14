@@ -65,7 +65,7 @@ __contract__(
     invariant(i <= 8)
   )
   {
-    // Make sure that u >> (8 * i) will not overflow uint8_t x[i]
+    /* Make sure that u >> (8 * i) will not overflow uint8_t x[i] */
     x[i] = (uint8_t)((u >> (8 * i)) & 0xFF);
   }
 }
