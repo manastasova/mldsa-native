@@ -25,11 +25,17 @@
  * Returns the loaded 64-bit unsigned integer
  **************************************************/
 static uint64_t load64(const uint8_t x[8])
+__contract__(
+  requires(memory_no_alias(x, sizeof(uint8_t) * 8))
+)
 {
   unsigned int i;
   uint64_t r = 0;
 
   for (i = 0; i < 8; i++)
+  __loop__(
+    invariant(i <= 8)
+  )
   {
     r |= (uint64_t)x[i] << 8 * i;
   }
@@ -46,13 +52,21 @@ static uint64_t load64(const uint8_t x[8])
  * Arguments:   - uint8_t *x: pointer to the output byte array (allocated)
  *              - uint64_t u: input 64-bit unsigned integer
  **************************************************/
-static void store64(uint8_t x[8], uint64_t u)
+static void store64(uint8_t x[8], const uint64_t u)
+__contract__(
+  requires(memory_no_alias(x, sizeof(uint8_t) * 8))
+  assigns(memory_slice(x, sizeof(uint8_t) * 8))
+)
 {
   unsigned int i;
 
   for (i = 0; i < 8; i++)
+  __loop__(
+    invariant(i <= 8)
+  )
   {
-    x[i] = u >> 8 * i;
+    // Make sure that u >> (8 * i) will not overflow uint8_t x[i]
+    x[i] = (uint8_t)((u >> (8 * i)) & 0xFF);
   }
 }
 
