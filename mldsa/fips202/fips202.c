@@ -453,8 +453,14 @@ __contract__(
  *              - unsigned int r: rate in bytes (e.g., 168 for SHAKE128)
  *              - uint8_t p: domain separation byte
  **************************************************/
-static void keccak_finalize(uint64_t s[25], unsigned int pos, unsigned int r,
-                            uint8_t p)
+static void keccak_finalize(uint64_t s[MLD_KECCAK_LANES], unsigned int pos,
+                            unsigned int r, uint8_t p)
+__contract__(
+  requires(pos < r && r < sizeof(uint64_t) * MLD_KECCAK_LANES)
+  requires((r / 8) >= 1)
+  requires(memory_no_alias(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
+  assigns(memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
+)
 {
   s[pos / 8] ^= (uint64_t)p << 8 * (pos % 8);
   s[r / 8 - 1] ^= 1ULL << 63;
