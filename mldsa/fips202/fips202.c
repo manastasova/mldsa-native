@@ -368,10 +368,19 @@ __contract__(
  *
  * Arguments:   - uint64_t *s: pointer to Keccak state
  **************************************************/
-static void keccak_init(uint64_t s[25])
+static void keccak_init(uint64_t s[MLD_KECCAK_LANES])
+__contract__(
+  requires(memory_no_alias(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
+  assigns(memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
+  ensures(forall(k, 0, MLD_KECCAK_LANES, s[k] == 0))
+)
 {
   unsigned int i;
-  for (i = 0; i < 25; i++)
+  for (i = 0; i < MLD_KECCAK_LANES; i++)
+  __loop__(
+    invariant(i <= MLD_KECCAK_LANES)
+    invariant(forall(k, 0, i, s[k] == 0))
+  )
   {
     s[i] = 0;
   }
