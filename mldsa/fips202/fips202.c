@@ -407,7 +407,8 @@ __contract__(
   requires(pos < r)
   requires(memory_no_alias(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
   requires(memory_no_alias(in, inlen))
-  assigns(memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES)))
+  assigns(memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
+  ensures(return_value < r))
 {
   unsigned int i;
 

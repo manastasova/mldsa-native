@@ -3,8 +3,8 @@
 
 #include "fips202/fips202.h"
 
-extern void keccak_squeezeblocks(uint8_t *out, size_t nblocks, 
-                                  uint64_t s[MLD_KECCAK_LANES], unsigned int r);
+extern void keccak_squeezeblocks(uint8_t *out, size_t nblocks,
+                                 uint64_t s[MLD_KECCAK_LANES], unsigned int r);
 
 void harness(void)
 {
