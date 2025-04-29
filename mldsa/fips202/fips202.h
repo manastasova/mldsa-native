@@ -65,7 +65,12 @@ __contract__(
   ensures(state->pos < SHAKE256_RATE)
 );
 #define shake256_finalize FIPS202_NAMESPACE(shake256_finalize)
-void shake256_finalize(keccak_state *state);
+void shake256_finalize(keccak_state *state)
+__contract__(
+  requires(memory_no_alias(state, sizeof(keccak_state)))
+  requires(state->pos < SHAKE256_RATE)
+  assigns(memory_slice(state, sizeof(keccak_state)))
+);
 #define shake256_squeeze FIPS202_NAMESPACE(shake256_squeeze)
 void shake256_squeeze(uint8_t *out, size_t outlen, keccak_state *state);
 #define shake256_absorb_once FIPS202_NAMESPACE(shake256_absorb_once)
