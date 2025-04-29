@@ -3,11 +3,11 @@
 include ../Makefile_params.common
 
 HARNESS_ENTRY = harness
-HARNESS_FILE = keccakf1600_squeezeblocks_harness
+HARNESS_FILE = keccak_absorb_once_harness
 
 # This should be a unique identifier for this proof, and will appear on the
 # Litani dashboard. It can be human-readable and contain spaces if you wish.
-PROOF_UID = keccakf1600_squeezeblocks
+PROOF_UID = keccak_absorb_once
 
 DEFINES +=
 INCLUDES +=
@@ -18,16 +18,16 @@ UNWINDSET +=
 PROOF_SOURCES += $(PROOFDIR)/$(HARNESS_FILE).c
 PROJECT_SOURCES += $(SRCDIR)/mldsa/fips202/fips202.c
 
-CHECK_FUNCTION_CONTRACTS=keccak_squeezeblocks
-USE_FUNCTION_CONTRACTS=KeccakF1600_StatePermute store64
+CHECK_FUNCTION_CONTRACTS=keccak_absorb_once
+USE_FUNCTION_CONTRACTS=KeccakF1600_StatePermute load64
 APPLY_LOOP_CONTRACTS=on
 USE_DYNAMIC_FRAMES=1
 
 # Disable any setting of EXTERNAL_SAT_SOLVER, and choose SMT backend instead
 EXTERNAL_SAT_SOLVER=
-CBMCFLAGS=--bitwuzla
+CBMCFLAGS=--smt2
 
-FUNCTION_NAME = keccak_squeezeblocks
+FUNCTION_NAME = keccak_absorb_once
 
 # If this proof is found to consume huge amounts of RAM, you can set the
 # EXPENSIVE variable. With new enough versions of the proof tools, this will

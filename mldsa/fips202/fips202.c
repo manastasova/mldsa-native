@@ -579,18 +579,19 @@ static void keccak_squeezeblocks(uint8_t *out, size_t nblocks,
                                  uint64_t s[MLD_KECCAK_LANES], unsigned int r)
 __contract__(
   requires(r < sizeof(uint64_t) * MLD_KECCAK_LANES)
-  requires(nblocks <= 8 /* somewhat arbitrary bound */)
+  requires(nblocks < (UINT32_MAX / r))
   requires(memory_no_alias(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
   requires(memory_no_alias(out, nblocks * r))
   assigns(memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
   assigns(memory_slice(out, nblocks * r)))
 {
-  unsigned int i = 0;
+  unsigned int i;
 
   while (nblocks > 0)
   __loop__(
     assigns(i, out, nblocks, memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES), memory_slice(out, nblocks * r))
-    invariant(nblocks <= loop_entry(nblocks) && out == loop_entry(out) + r * (loop_entry(nblocks) - nblocks) && nblocks >= 0)
+    invariant(nblocks <= loop_entry(nblocks))
+    invariant(out == loop_entry(out) + r * (loop_entry(nblocks) - nblocks) && nblocks >= 0)
   )
   {
     KeccakF1600_StatePermute(s);

@@ -82,7 +82,14 @@ __contract__(
 );
 
 #define shake256_squeezeblocks FIPS202_NAMESPACE(shake256_squeezeblocks)
-void shake256_squeezeblocks(uint8_t *out, size_t nblocks, keccak_state *state);
+void shake256_squeezeblocks(uint8_t *out, size_t nblocks, keccak_state *state)
+__contract__(
+  requires(nblocks < (UINT32_MAX / SHAKE256_RATE))
+  requires(memory_no_alias(state, sizeof(keccak_state)))
+  requires(memory_no_alias(out, nblocks * SHAKE256_RATE))
+  assigns(memory_slice(state, sizeof(keccak_state)))
+  assigns(memory_slice(out, nblocks * SHAKE256_RATE))
+);
 
 #define shake128 FIPS202_NAMESPACE(shake128)
 void shake128(uint8_t *out, size_t outlen, const uint8_t *in, size_t inlen);
