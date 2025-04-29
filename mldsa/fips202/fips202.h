@@ -48,7 +48,12 @@ __contract__(
 void shake128_squeezeblocks(uint8_t *out, size_t nblocks, keccak_state *state);
 
 #define shake256_init FIPS202_NAMESPACE(shake256_init)
-void shake256_init(keccak_state *state);
+void shake256_init(keccak_state *state)
+__contract__(
+  requires(memory_no_alias(state, sizeof(keccak_state)))
+  assigns(memory_slice(state, sizeof(keccak_state)))
+  ensures(forall(k, 0, MLD_KECCAK_LANES, state->s[k] == 0))
+);
 #define shake256_absorb FIPS202_NAMESPACE(shake256_absorb)
 void shake256_absorb(keccak_state *state, const uint8_t *in, size_t inlen);
 #define shake256_finalize FIPS202_NAMESPACE(shake256_finalize)
