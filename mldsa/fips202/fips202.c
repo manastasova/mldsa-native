@@ -574,15 +574,29 @@ __contract__(
  *              - uint64_t *s: pointer to input/output Keccak state
  *              - unsigned int r: rate in bytes (e.g., 168 for SHAKE128)
  **************************************************/
-static void keccak_squeezeblocks(uint8_t *out, size_t nblocks, uint64_t s[25],
-                                 unsigned int r)
+static void keccak_squeezeblocks(uint8_t *out, size_t nblocks,
+                                 uint64_t s[MLD_KECCAK_LANES], unsigned int r)
+__contract__(
+  requires(r < sizeof(uint64_t) * MLD_KECCAK_LANES)
+  requires(nblocks <= 8 /* somewhat arbitrary bound */)
+  requires(memory_no_alias(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
+  requires(memory_no_alias(out, nblocks * r))
+  assigns(memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
+  assigns(memory_slice(out, nblocks * r)))
 {
-  unsigned int i;
+  unsigned int i = 0;
 
-  while (nblocks)
+  while (nblocks > 0)
+  __loop__(
+    assigns(i, out, nblocks, memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES), memory_slice(out, nblocks * r))
+    invariant(nblocks <= loop_entry(nblocks) && out == loop_entry(out) + r * (loop_entry(nblocks) - nblocks) && nblocks >= 0)
+  )
   {
     KeccakF1600_StatePermute(s);
     for (i = 0; i < r / 8; i++)
+    __loop__(
+      invariant(i <= (r / 8) && i < (sizeof(uint64_t) * MLD_KECCAK_LANES) / 8)
+    )
     {
       store64(out + 8 * i, s[i]);
     }
