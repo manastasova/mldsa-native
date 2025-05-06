@@ -587,23 +587,29 @@ __contract__(
   assigns(memory_slice(out, nblocks * r)))
 {
   unsigned int i;
+  uint64_t lane;
+  uint8_t byte;
 
   while (nblocks > 0)
   __loop__(
-    assigns(i, out, nblocks, memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES), memory_slice(out, nblocks * r))
-    invariant(nblocks <= loop_entry(nblocks))
-    invariant(out == loop_entry(out) + r * (loop_entry(nblocks) - nblocks) && nblocks >= 0)
+    assigns(i, out, nblocks, memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES),
+      memory_slice(out, nblocks * r))
+    invariant(nblocks >= 0 && nblocks <= loop_entry(nblocks))
+    invariant(out == loop_entry(out) + r * (loop_entry(nblocks) - nblocks))
   )
   {
     KeccakF1600_StatePermute(s);
-    for (i = 0; i < r / 8; i++)
+    for (i = 0; i < r; i++)
     __loop__(
-      invariant(i <= (r / 8))
+      assigns(i, out, memory_slice(out, nblocks * r))
+      invariant(i <= r)
+      invariant(out == loop_entry(out) + i)
     )
     {
-      store64(out + 8 * i, s[i]);
+      lane = s[i / 8];
+      byte = (uint8_t)((lane >> (8 * (i % 8))) & 0xFF);
+      *out++ = byte;
     }
-    out += r;
     nblocks -= 1;
   }
 }
