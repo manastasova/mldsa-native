@@ -70,6 +70,46 @@ __contract__(
   }
 }
 
+/*************************************************
+ * Name:        keccakf1600_extract_bytes
+ *
+ * Description: Extracts a specified number of bytes from the state
+ *              buffer starting at offset and stores them in the provided
+ *              data buffer
+ *
+ * Arguments:   - uint64_t *state: pointer to the state array
+ *              - unsigned char *data: pointer to the output byte array
+ *(allocated)
+ *              - unsigned offset: starting byte position in the state
+ *              - unsigned length: number of bytes to extract
+ **************************************************/
+static void keccakf1600_extract_bytes(uint64_t *state, unsigned char *data,
+                                      unsigned offset, unsigned length)
+__contract__(
+  requires(0 <= offset && offset <= MLD_KECCAK_LANES * sizeof(uint64_t) &&
+      0 <= length && length <= MLD_KECCAK_LANES * sizeof(uint64_t) - offset)
+  requires(memory_no_alias(state, sizeof(uint64_t) * MLD_KECCAK_LANES))
+  requires(memory_no_alias(data, length))
+  assigns(memory_slice(data, length)))
+{
+  unsigned i;
+#if defined(MLD_SYS_LITTLE_ENDIAN)
+  uint8_t *state_ptr = (uint8_t *)state + offset;
+  for (i = 0; i < length; i++)
+  __loop__(invariant(i <= length))
+  {
+    data[i] = state_ptr[i];
+  }
+#else  /* MLD_SYS_LITTLE_ENDIAN */
+  /* Portable version */
+  for (i = 0; i < length; i++)
+  __loop__(invariant(i <= length))
+  {
+    data[i] = (state[(offset + i) >> 3] >> (8 * ((offset + i) & 0x07))) & 0xFF;
+  }
+#endif /* !MLD_SYS_LITTLE_ENDIAN */
+}
+
 /* Keccak round constants */
 const uint64_t KeccakF_RoundConstants[NROUNDS] = {
     (uint64_t)0x0000000000000001ULL, (uint64_t)0x0000000000008082ULL,
@@ -487,21 +527,27 @@ __contract__(
 static unsigned int keccak_squeeze(uint8_t *out, size_t outlen, uint64_t s[25],
                                    unsigned int pos, unsigned int r)
 {
-  unsigned int i;
-
-  while (outlen)
+  while (outlen > 0)
   {
     if (pos == r)
     {
       KeccakF1600_StatePermute(s);
       pos = 0;
     }
-    for (i = pos; i < r && i < pos + outlen; i++)
+    if (pos + outlen >= r)
     {
-      *out++ = s[i / 8] >> 8 * (i % 8);
+      keccakf1600_extract_bytes(s, out, pos, r);
+      out += r - pos;
+      outlen -= r - pos;
+      pos = 0;
     }
-    outlen -= i - pos;
-    pos = i;
+    if (pos + outlen < r)
+    {
+      keccakf1600_extract_bytes(s, out, pos, outlen);
+      out += outlen - pos;
+      outlen = 0;
+      pos += outlen;
+    }
   }
 
   return pos;
@@ -560,46 +606,6 @@ __contract__(
 
   s[i / 8] ^= (uint64_t)p << 8 * (i % 8);
   s[(r - 1) / 8] ^= 1ULL << 63;
-}
-
-/*************************************************
- * Name:        keccakf1600_extract_bytes
- *
- * Description: Extracts a specified number of bytes from the state
- *              buffer starting at offset and stores them in the provided
- *              data buffer
- *
- * Arguments:   - uint64_t *state: pointer to the state array
- *              - unsigned char *data: pointer to the output byte array
- *(allocated)
- *              - unsigned offset: starting byte position in the state
- *              - unsigned length: number of bytes to extract
- **************************************************/
-static void keccakf1600_extract_bytes(uint64_t *state, unsigned char *data,
-                                      unsigned offset, unsigned length)
-__contract__(
-  requires(0 <= offset && offset <= MLD_KECCAK_LANES * sizeof(uint64_t) &&
-      0 <= length && length <= MLD_KECCAK_LANES * sizeof(uint64_t) - offset)
-  requires(memory_no_alias(state, sizeof(uint64_t) * MLD_KECCAK_LANES))
-  requires(memory_no_alias(data, length))
-  assigns(memory_slice(data, length)))
-{
-  unsigned i;
-#if defined(MLD_SYS_LITTLE_ENDIAN)
-  uint8_t *state_ptr = (uint8_t *)state + offset;
-  for (i = 0; i < length; i++)
-  __loop__(invariant(i <= length))
-  {
-    data[i] = state_ptr[i];
-  }
-#else  /* MLD_SYS_LITTLE_ENDIAN */
-  /* Portable version */
-  for (i = 0; i < length; i++)
-  __loop__(invariant(i <= length))
-  {
-    data[i] = (state[(offset + i) >> 3] >> (8 * ((offset + i) & 0x07))) & 0xFF;
-  }
-#endif /* !MLD_SYS_LITTLE_ENDIAN */
 }
 
 /*************************************************
