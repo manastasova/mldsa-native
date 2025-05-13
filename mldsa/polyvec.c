@@ -11,14 +11,38 @@
 void polyvec_matrix_expand(polyvecl mat[MLDSA_K],
                            const uint8_t rho[MLDSA_SEEDBYTES])
 {
-  unsigned int i, j;
+  /* Reference: This code is re-factored from the reference implementation
+   * to facilitate proof with CBMC and to improve readability.
+   *
+   * The temporary polyvecl and poly variables simplify the CBMC
+   * memory model by removing nested access patterns. Loop invariant
+   * checks are performed on the local variable tmp_polyvecl before
+   * assigning it to the output matrix. */
+
+  unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
+  __loop__(
+    assigns(i, memory_slice(mat, MLDSA_K * sizeof(polyvecl)))
+    invariant(i <= MLDSA_K)
+    invariant(forall(k1, 0, i, forall(l1, 0, MLDSA_L, array_bound(mat[k1].vec[l1].coeffs, 0, MLDSA_N, 0, MLDSA_Q))))
+  )
   {
+    unsigned int j;
+    polyvecl tmp_polyvecl;
+
     for (j = 0; j < MLDSA_L; ++j)
+    __loop__(
+      assigns(j, memory_slice(&tmp_polyvecl, sizeof(polyvecl)))
+      invariant(j <= MLDSA_L)
+      invariant(forall(l1, 0, j, array_bound(tmp_polyvecl.vec[l1].coeffs, 0, MLDSA_N, 0, MLDSA_Q)))
+    )
     {
-      poly_uniform(&mat[i].vec[j], rho, (i << 8) + j);
+      poly temp_poly;
+      poly_uniform(&temp_poly, rho, (i << 8) + j);
+      tmp_polyvecl.vec[j] = temp_poly;
     }
+    mat[i] = tmp_polyvecl;
   }
 }
 
@@ -35,7 +59,7 @@ void polyvec_matrix_pointwise_montgomery(polyveck *t,
 }
 
 /**************************************************************/
-/************ Vectors of polynomials of length MLDSA_L **************/
+/********** Vectors of polynomials of length MLDSA_L **********/
 /**************************************************************/
 
 void polyvecl_uniform_eta(polyvecl *v, const uint8_t seed[MLDSA_CRHBYTES],
@@ -190,7 +214,7 @@ int polyvecl_chknorm(const polyvecl *v, int32_t bound)
 }
 
 /**************************************************************/
-/************ Vectors of polynomials of length MLDSA_K **************/
+/********** Vectors of polynomials of length MLDSA_K **********/
 /**************************************************************/
 
 void polyveck_uniform_eta(polyveck *v, const uint8_t seed[MLDSA_CRHBYTES],
