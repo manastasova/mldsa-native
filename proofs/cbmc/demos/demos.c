@@ -4,12 +4,81 @@
 #include "demos.h"
 
 
+
+
+uint32_t demo_multiply(uint32_t a, uint32_t b) {
+  return a * b;
+};
+
 uint32_t demo_add(uint32_t a, uint32_t b) {
   return a + b;
 };
 
 
+void demo_multiply_arrays(uint32_t* a, uint32_t* b, uint32_t* r, int elems){
+  for (int i = 0; i < elems; i++)
+  __loop__(
+    invariant(i >= 0 && i <= elems)
+    invariant(forall(k, 0, i, r[k] == a[k] * b[k]))
+  )
+  {
+    r[i] = demo_multiply(a[i], b[i]);
+  }
+}
 
+void demo_add_arrays(uint32_t* a, uint32_t* b, uint32_t* r, int elems){
+  for (int i = 0; i < elems; i++)
+  __loop__(
+    invariant(i >= 0 && i <= elems)
+    invariant(forall(k, 0, i, r[k] == a[k] + b[k]))
+  )
+  {
+    r[i] = demo_add(a[i], b[i]);
+  }
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// uint32_t demo_add(uint32_t a, uint32_t b) {
+//   return a + b;
+// };
+
+// void demo_add_arrays(const uint32_t* a, const uint32_t* b, uint32_t *r, int elems){
+//   for(int i = 0; i < elems; ++i)
+//   __loop__
+//   (
+//     invariant(0 <= i && i <= elems)
+//     invariant(forall(k, 0, i, r[k] == a[k] + b[k]))
+//   )
+//   {
+//     r[i] = demo_add(a[i], a[i]);
+//   }
+// }
 
 
 

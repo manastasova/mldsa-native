@@ -6,7 +6,7 @@
 void harness(void)
 { 
  uint32_t a, b;
- demo_add(a, b);
+ demo_multiply(a, b);
 }
 
 
